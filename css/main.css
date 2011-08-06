@@ -1,0 +1,19 @@
+html,body{
+font-family:"Lucida Grande", "Lucida Sans Unicode", Verdana, Arial, Helvetica, sans-serif;
+background-color:#e8e8e8;
+font-size:12px;
+}
+p, h1, form, button{border:0; margin:0; padding:0;}
+.spacer{clear:both; height:1px;}
+/* ---------- Namce Form --------- */
+.nameForm{ margin:0 auto; width:900px; padding:14px; }
+
+.nameForm input{ font-size:12px;padding:4px 2px;border:solid 1px #aacfe4; width:200px;background-color:#ededed;}
+/* ----------- My Form ----------- */
+.networkForm{ margin:0 auto; width:900px; padding:14px; }
+/* ----------- stylized ----------- */
+.networkFormTable td{ width:294px; text-align:center; }
+.networkForm input{ font-size:12px;padding:4px 2px;border:solid 1px #ff5a00; width:200px;background-color:#ededed;}
+.networkForm a{font-size:20px; text-align:center;float:center;}
+
+#delButton { width:12px; }

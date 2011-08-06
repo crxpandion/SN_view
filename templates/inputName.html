@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
+    <!---    <script type="text/javascript" src="{{ MEDIA_ROOT }}js/input.js"></script> -->
+   <link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/main.css" type="text/css">
+    <title>Input Your Name</title>
+</head>
+
+<body>
+    {% if form %}
+    <form action="/inputName/" method="post" class="nameForm">
+        {% csrf_token %}
+        <h1>Input Your Name!</h1>
+        {{ form.as_p }}
+        <input type="submit" value="Submit" />
+    </form>
+    {% endif %}
+
+</body>

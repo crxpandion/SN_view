@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+   
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
+    <!---    <script type="text/javascript" src="{{ MEDIA_ROOT }}js/input.js"></script> -->
+    <link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/main.css"> 
+    <title>Create Your Network</title>
+</head>
+
+<body>
+
+    {% if form %}
+    <form action="" method="post" class="networkForm">
+        {% csrf_token %}
+        <h1>Hi {{ me.first_Name|title }}!</h1>
+        <h2>Input Your Connections:</h2>
+        {{ error }}
+        <table class="networkFormTable">
+            {{ form.management_form }} 
+            <tr>
+                <th scope="col">Who introduced you to the contact in Column B?
+                    (These are the Brokers in your network).</th>
+                <th scope="col">Name of Contact</th>
+                <th scope="col">Who did YOU introduce the contact in Column B to?
+                    (You are the Broker in thier network</th>
+                {% if ever %}
+                <th></th>
+                {%  endif %}
+                <th scope="col" ><input type="submit" value="Insert Connections Into Network"/></th>
+            </tr>
+            {% for f in form %}
+            <tr>
+                <td>{{ f.a.errors }}{{ f.a }}</td>
+                <td>{{ f.b.errors }}{{ f.b }}</td>
+                <td>{{ f.c.errors }}{{ f.c }}</td>
+                {% if ever %}
+                <td><input id="delButton" type="submit" value="{{ f.id.value }}" name="delete" style="background: #FFF url('{{ MEDIA_URL }}static/delete.png');"/></td>
+                {% endif %}
+                {% if ready %}
+                {% if forloop.first %}
+                <td><a href="{{ network }}">View Your Network</a></td>
+                {% else %}
+                <td></td>
+                {% endif %}
+                {% else %}
+                <td></td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </table>
+        
+    </form>
+    {% endif %}
+    </body>
+
+</html>
