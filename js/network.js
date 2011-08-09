@@ -1,28 +1,5 @@
 var labelType, useGradients, nativeTextSupport, animate;
 
-(function() {
-  var ua = navigator.userAgent,
-      iStuff = ua.match(/iPhone/i) || ua.match(/iPad/i),
-      typeOfCanvas = typeof HTMLCanvasElement,
-      nativeCanvasSupport = (typeOfCanvas == 'object' || typeOfCanvas == 'function'),
-      textSupport = nativeCanvasSupport 
-        && (typeof document.createElement('canvas').getContext('2d').fillText == 'function');
-  //I'm setting this based on the fact that ExCanvas provides text support for IE
-  //and that as of today iPhone/iPad current text support is lame
-  labelType = (!nativeCanvasSupport || (textSupport && !iStuff))? 'Native' : 'HTML';
-  nativeTextSupport = labelType == 'Native';
-  useGradients = nativeCanvasSupport;
-  animate = !(iStuff || !nativeCanvasSupport);
-})();
-
-var Log = {
-  elem: false,
-  write: function(text){
-    if (!this.elem) 
-      this.elem = document.getElementById('log');
-      }
-};
-
 
 function init(){
     //init data
@@ -32,13 +9,6 @@ function init(){
     var rgraph = new $jit.RGraph({
         //Where to append the visualization
         injectInto: 'infovis',
-        //Optional: create a background canvas that plots
-        //concentric circles.
-        /*background: {
-         CanvasStyles: {
-            strokeStyle: '#555'
-          }
-        },*/
         //Add navigation capabilities:
         //zooming by scrolling and panning.
         Navigation: {
@@ -60,15 +30,7 @@ function init(){
         
         levelDistance:120,
         transition:$jit.Trans.Expo.easeInOut,
-        fps: 30,
-        onBeforeCompute: function(node){
-
-            Log.write("centering " + node.name + "...");
-            //Add the relation list in the right column.
-            //This list is taken from the data property of each JSON node.
-            //$jit.id('inner-details').innerHTML = node.data.relation;
-        },
-        
+        fps: 30,        
         //Add the name of the node in the correponding label
         //and a click handler to move the graph.
         //This method is called once, on label creation.
@@ -97,10 +59,7 @@ function init(){
             } else{ //if(node._depth == 2){
                 style.fontSize = "0.7em";
                 style.color = "#696969";
-            
-          /*  } else {
-                style.display = 'none';
-            */}
+            }
             
             var left = parseInt(style.left);
             var w = domElement.offsetWidth;

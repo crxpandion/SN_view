@@ -2,7 +2,7 @@
 <html>
 <head>
    
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
+    <script type="text/javascript" src="{{ MEDIA_URL }}js/jquery-1.6.2.min.js"></script>
     <!---    <script type="text/javascript" src="{{ MEDIA_ROOT }}js/input.js"></script> -->
     <link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/main.css"> 
     <title>Create Your Network</title>
@@ -38,11 +38,11 @@
                 <td><input id="delButton" type="submit" value="{{ f.id.value }}" name="delete" style="background: #FFF url('{{ MEDIA_URL }}static/delete.png');"/></td>
                 {% endif %}
                 {% if ready %}
-                {% if forloop.first %}
-                <td><a href="{{ network }}">View Your Network</a></td>
-                {% else %}
-                <td></td>
-                {% endif %}
+                    {% if forloop.first %}
+                    <td><a href="{{ network }}">View Your Network</a></td>
+                    {% else %}
+                    <td></td>
+                    {% endif %}
                 {% else %}
                 <td></td>
                 {% endif %}

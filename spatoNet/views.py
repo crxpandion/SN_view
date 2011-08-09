@@ -44,11 +44,12 @@ def inputName(request):
 def inputNetwork(request, ID):
     network = '/viewNetwork/%s/' % ID
     me = People.objects.get(user_ID = ID)
-    numToDisplay = 25 
+    numToDisplay = 15 
     l_fset = formset_factory( LinkForm, extra = numToDisplay)
     old_entries = grabOldLinkForms(request, ID)
     form = l_fset(initial=old_entries)
     Icount = len(old_entries)
+    print Icount
     def errorHandle(error, ID):
         param = {  'error' : error,
                    'form' : l_fset(initial= grabOldLinkForms(request, ID)),
@@ -58,32 +59,41 @@ def inputNetwork(request, ID):
             param['ready'] = True
         param.update(csrf(request))
         return render_to_response('inputNetwork.html', param, context_instance=RequestContext(request) )
+    def refreshParams():
+         formset = formset_factory(LinkForm, extra=numToDisplay)
+         old_entries = grabOldLinkForms(request,ID)
+         param = { 'form': formset(initial=old_entries), 'me': People.objects.get(user_ID = ID),'network' : network }
+         if len(old_entries) > 0:
+            param['ready'] = True
+         param.update(csrf(request))
+         return render_to_response('inputNetwork.html', param, context_instance=RequestContext(request)) 
 
     if request.method == 'POST':
- #       if "delete" in request.POST:
- #          LinkEn
+        if "delete" in request.POST:
+           LinkEntry.objects.filter( link_ID = request.POST['delete']).delete()
+           return refreshParams()
         fset = l_fset(request.POST) 
         if fset.is_valid():
-            for f in fset.cleaned_data:
-                if f:
-                    print f
+            for i, f in enumerate(fset.cleaned_data):
                 if f and not LinkEntry.objects.filter(a = f['a'], b = f['b'], c = f['c'], user_ID = ID ): # if f is not empty and f does not exist... 
                                                                                                           # also edge case: when they input 'Me'
-                    le = LinkEntry( a = f['a'], b = f['b'], c = f['c'], user_ID = me )
+                    #check if it is an edit of initial data
+                    if i < Icount:
+                        l = old_entries[i] # edited linkEntry
+                        LinkEntry.objects.filter(link_ID = l['id']).delete()
+                        le = LinkEntry( a = f['a'], b = f['b'], c = f['c'], user_ID = me, link_ID = l['id'] )
+                    else:
+                        le = LinkEntry( a = f['a'], b = f['b'], c = f['c'], user_ID = me )
                     le.save()
                     le.makeLinks()
-            formset = formset_factory(LinkForm, extra=numToDisplay)
-            old_entries = grabOldLinkForms(request,ID)
-            param = { 'form': formset(initial=old_entries), 'me': People.objects.get(user_ID = ID),'network' : network }
-            if len(old_entries) > 0:
-                param['ready'] = True
-            param.update(csrf(request))
-            return render_to_response('inputNetwork.html', param, context_instance=RequestContext(request)) 
+            return refreshParams()    
         else:
             error = u'you must enter valid Names.'
             return errorHandle(error, ID)
     else:
-        param = {'form': form, 'me': me, 'network' : network, }
+        param = {'form': form, 
+                 'me': me, 
+                 'network' : network, }
         if Icount > 0:
             param['ready'] = True
         param.update(csrf(request))

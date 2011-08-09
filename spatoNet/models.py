@@ -10,16 +10,16 @@ class People(models.Model):
 
 class LinkEntry(models.Model):
     user_ID = models.ForeignKey(People)
-    link_ID = models.AutoField(primary_key = True)
+    link_ID = models.AutoField(primary_key=True)
     a = models.CharField(max_length=30)
     b = models.CharField(max_length=30)
     c = models.CharField(max_length=200)
 
     def save(self, *args, **kwargs):
-        if not self.pk:
-            if self.a.split()[0] == 'Me':
-                me = People.objects.get(user_ID = self.user_ID.user_ID)
-                self.a = me.first_Name + ' ' + me.last_Name
+
+        if self.a.split()[0] == 'Me':
+           me = People.objects.get(user_ID = self.user_ID.user_ID)
+           self.a = me.first_Name + ' ' + me.last_Name
         super(LinkEntry, self).save(*args, **kwargs)
  
     def cleanSplits(self, s):
@@ -36,10 +36,11 @@ class LinkEntry(models.Model):
         broken_a = self.cleanSplits(self.a.split(' ', 2))
         broken_b = self.cleanSplits(self.b.split(' ', 2))
         list_of_friends = self.c.split(',')
+        print broken_a[0]
         if not broken_a[0] == 'Me': 
             d['broker'] = {'first_name' : broken_a[0], 'last_name' : broken_a[1] }
         else:
-            me = People.objects.get(user_ID = self.user_ID)
+            me = self.user_ID 
             d['broker'] = {'first_name' : me.first_Name, 'last_name' : me.last_Name }
         d['contact'] = {'first_name' : broken_b[0], 'last_name' : broken_b[1] }
         d['friends'] = []
