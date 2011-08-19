@@ -61,8 +61,9 @@ class LinkEntry(models.Model):
         broker = People.objects.get(first_Name = ppl_dict['broker']['first_name'], last_Name = ppl_dict['broker']['last_name'])
         contact = People.objects.get(first_Name = ppl_dict['contact']['first_name'], last_Name = ppl_dict['contact']['last_name'])
         me = People.objects.get(user_ID = self.user_ID.user_ID)
-        M_P = self.user_ID.user_ID == broker.user_ID
-        if (not M_P):
+        #M_P = self.user_ID.user_ID == broker.user_ID
+        if (self.user_ID != broker.user_ID):
+            print "+++++++++++++++"
             if (not Link.objects.filter(u = me, v = broker)):
                 Link(parent = me, link_type = 'N', entry = self, u = me, v = broker, ).save()
             Link(parent = me, link_type = 'U', entry = self, u = broker, v = contact, ).save()
@@ -72,13 +73,14 @@ class LinkEntry(models.Model):
         if len(friends) > 0:
             for p in friends:
                 Link(parent = me, link_type = 'M', entry = self, u = contact, v = p, ).save() #should check to see if your already connected to p ..
-                Link(parent = me, link_type = 'N', entry = self, u = me, v = p,).save()
+                Link(parent = me, link_type = 'Q', entry = self, u = me, v = p,).save()
   
 class Link(models.Model): 
     LINK_CHOICES = (
             ('M', 'I Introduced Them'),
             ('U', 'You Introduced Them'),
             ('N', 'Normal'),
+            ('Q', 'Normal')
             )
     parent = models.ForeignKey(People)
     entry = models.ForeignKey(LinkEntry)

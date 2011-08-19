@@ -1736,7 +1736,7 @@ Options.Events = {
   $extend: false,
   
   enable: false,
-  enableForEdges: false,
+  enableForfs: false,
   type: 'auto',
   onClick: $.empty,
   onRightClick: $.empty,
@@ -5011,7 +5011,7 @@ Graph.Util = {
                 that.eachAdjacency(node, function(adj) {
                     var n = adj.nodeTo;
                     if(n._depth > d) loopLevel(n, levelBegin, levelEnd);
-                });
+                }, flags);
             }
         })(node, levelBegin + d, levelEnd + d);      
     },
@@ -5169,7 +5169,7 @@ Graph.Util = {
         this.eachAdjacency(node, function(adj) {
             var n = adj.nodeTo;
             if(n._depth < node._depth) ans.push(n);
-        });
+        }, "ignore");
         return ans;
     },
     

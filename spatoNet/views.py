@@ -17,7 +17,10 @@ import json
 
 # Create your views here.
 
-color_dict = { 'N' : '#808080', 'U': '#E30038', 'M' :'#00c224', }
+color_dict = { 'N' : '#E30038', #red
+               'U' : '#E30038', #red
+               'M' : '#00c224', #green
+               'Q' : '#808080'} #grey
 
 def inputName(request):
     def errorHandle(error):
@@ -116,16 +119,24 @@ def generateJson(ID):
         d = {}
         d['id'] = str(p.user_ID)
         d['name'] = str(p.first_Name) + ' ' + str(p.last_Name)
-        #d['data'] = {}
+        d['data'] = {}
         adj = []
         ls = links.filter(u = p.user_ID)
         for l in ls:
+            print l.link_type
             adjDict = {}
             adjDict['nodeTo'] = str(l.v.user_ID)
             adjDict['data'] = {'$color' : color_dict[l.link_type] } 
+            if l.link_type == 'Q':
+                print 'yes'
+                adjDict['data']['$ignore'] = 'true'
+                adjDict['data']['$type'] = 'line'
+                
+                
             adj.append(adjDict)
         d['adjacencies'] = adj
         jsString.append(d)
+        #print json.dumps(jsString, indent = 4)
     return json.dumps(jsString, separators=(',',':'))
 
 

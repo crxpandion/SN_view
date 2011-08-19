@@ -28,18 +28,27 @@ function init(){
           lineWidth:1.0
         },
         
-        levelDistance:120,
+        levelDistance:110,
         transition:$jit.Trans.Expo.easeInOut,
         fps: 30,        
         //Add the name of the node in the correponding label
         //and a click handler to move the graph.
         //This method is called once, on label creation.
+        // onBeforeCompute: function(node){
+        //            var max_depth = 0;
+        //            rgraph.graph.eachNode(function(n) {
+        //               if (n._depth > max_depth) {
+        //                 max_depth = n._depth;  
+        //               };
+        //            });
+        //             rgraph.levelDistance = Math.floor(660 / max_depth);                 
+        //           }, 
         onCreateLabel: function(domElement, node){
             domElement.innerHTML = node.name;
             domElement.onclick = function(){
                 rgraph.onClick(node.id, {
                     onComplete: function() {
-                        Log.write("done");
+                        //Log.write("done");
                     }
                 });
             };
@@ -70,10 +79,20 @@ function init(){
     rgraph.loadJSON(json, 0);
     //trigger small animation
     rgraph.graph.eachNode(function(n) {
+        // n.eachAdjacency(function(adj){
+        //         if (adj.getData('ignore') && adj.getData('ignore') == 'true') {
+        //             adj['ignore'] = true;
+        //         } 
+        //     });
       var pos = n.getPos();
       pos.setc(-500, -500);
     });
-    
+    var _root_ = rgraph.graph.getNode("1")
+    _root_.eachAdjacency(function(adj){
+          if (adj.getData('ignore') && adj.getData('ignore') == 'true') {
+              adj['ignore'] = true;
+          } 
+      });
     rgraph.compute('end');
     rgraph.fx.animate({
       modes:['polar'],
@@ -84,7 +103,7 @@ function init(){
     //end
     //append information about the root relations in the right column
 
-    rgraph.controller.onBeforeCompute(rgraph.graph.getNode(rgraph.root));
+    // rgraph.controller.onBeforeCompute(rgraph.graph.getNode(rgraph.root));
     //
 
 }
