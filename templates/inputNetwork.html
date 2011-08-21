@@ -23,10 +23,8 @@
                     (These are the Brokers in your network).</th>
                 <th scope="col">Name of Contact</th>
                 <th scope="col">Who did YOU introduce the contact in Column B to?
-                    (You are the Broker in thier network</th>
-                {% if ever %}
+                    (You are the Broker in their network</th>
                 <th></th>
-                {%  endif %}
                 <th scope="col" ><input type="submit" value="Insert Connections Into Network"/></th>
             </tr>
             {% for f in form %}
@@ -34,9 +32,7 @@
                 <td>{{ f.a.errors }}{{ f.a }}</td>
                 <td>{{ f.b.errors }}{{ f.b }}</td>
                 <td>{{ f.c.errors }}{{ f.c }}</td>
-                {% if ever %}
-                <td><input id="delButton" type="submit" value="{{ f.id.value }}" name="delete" style="background: #FFF url('{{ MEDIA_URL }}static/delete.png');"/></td>
-                {% endif %}
+                <td><input id="delButton" type="image" value="{{ f.id.value }}" name="delete" src="{{ MEDIA_URL }}static/delete.png" alt="Submit"/></td>
                 {% if ready %}
                     {% if forloop.first %}
                     <td><a href="{{ network }}">View Your Network</a></td>

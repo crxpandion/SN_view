@@ -63,7 +63,6 @@ class LinkEntry(models.Model):
         me = People.objects.get(user_ID = self.user_ID.user_ID)
         #M_P = self.user_ID.user_ID == broker.user_ID
         if (self.user_ID != broker.user_ID):
-            print "+++++++++++++++"
             if (not Link.objects.filter(u = me, v = broker)):
                 Link(parent = me, link_type = 'N', entry = self, u = me, v = broker, ).save()
             Link(parent = me, link_type = 'U', entry = self, u = broker, v = contact, ).save()

@@ -73,8 +73,9 @@ def inputNetwork(request, ID):
 
     if request.method == 'POST':
         if "delete" in request.POST:
-           LinkEntry.objects.filter( link_ID = request.POST['delete']).delete()
-           return refreshParams()
+            if request.POST['delete'] != 'None':
+                LinkEntry.objects.filter( link_ID = request.POST['delete']).delete()
+            return refreshParams()
         fset = l_fset(request.POST) 
         if fset.is_valid():
             for i, f in enumerate(fset.cleaned_data):
@@ -109,7 +110,16 @@ def viewNetwork(request, ID):
 
 ################### HELPER FUNCTIONS #######################
 
-
+def deleteLinkEntry(link):
+    l = LinkEntry.objects.get( link_ID = link )
+    a = l.cleanSplits( l.a.split(' ', 2) )
+    b = l.cleanSplits( l.b.split(' ', 2) )
+    list_of_friends = l.c.split(',')
+    
+    
+#def searchForLinkEntryContaining():
+    
+    
 
 def generateJson(ID):
     jsString = []
@@ -131,8 +141,6 @@ def generateJson(ID):
                 print 'yes'
                 adjDict['data']['$ignore'] = 'true'
                 adjDict['data']['$type'] = 'line'
-                
-                
             adj.append(adjDict)
         d['adjacencies'] = adj
         jsString.append(d)
@@ -150,7 +158,7 @@ def makeUniquePeopleList(l):
         keys[p] = 1
     return keys.keys()
 
-#def linkEntryToLinkTransform
+
 
 def grabOldLinkForms(request, user_ID):
     link_forms = LinkEntry.objects.filter(user_ID = user_ID)
@@ -164,160 +172,4 @@ def grabOldLinkForms(request, user_ID):
         l.append(dic)
     return l
 
-
-def processLinkForm(f, user_ID):
-    I = []
-    I.append(f['a'].strip().title().split())
-    I.append(f['b'].strip().title().split())
-    I.append(f['c'].strip().title().split())
-    for j in I:
-        if len(j) > 0:
-            firstN = j[0]
-            if len(j) < 2 :
-                j.append('')
-            lastN = j[1]
-            createPerson(firstN, lastN)
-        else:
-            j.append('')
-            j.append('')
-    broker = I[0]
-    contact = I[1]
-    friends = I[2]
-
-#if you havent been introduced to your broker yet then we create a  link to do so. 
-    if (not (int(user_ID) == int(People.objects.get(first_Name = broker[0], last_Name = broker[1]).user_ID))) and (not (Link.objects.filter(u = People.objects.get(user_ID = user_ID), v = People.objects.get(first_Name = broker[0], last_Name = broker[1])))):
-        Link(parent = People.objects.get(user_ID = user_ID),
-            u   = People.objects.get(user_ID = user_ID),
-            v   = People.objects.get(first_Name = broker[0], last_Name = broker[1]),).save()
-        Link(parent = People.objects.get(user_ID = user_ID),
-            u   = People.objects.get(first_Name = broker[0], last_Name = broker[1]),
-            v   = People.objects.get(user_ID = user_ID),).save()
-
-
-    
-    Link(parent = People.objects.get(user_ID = user_ID),
-            u   = People.objects.get(first_Name = broker[0], last_Name = broker[1]),
-            v   = People.objects.get(first_Name = contact[0], last_Name = contact[1]),).save()
-    Link(parent = People.objects.get(user_ID = user_ID),
-            u   = People.objects.get(first_Name = contact[0], last_Name = contact[1]),
-            v   = People.objects.get(first_Name = broker[0], last_Name = broker[1]),).save()
-    if not friends[0] == '':
-        Link(parent = People.objects.get(user_ID = user_ID),
-                u   = People.objects.get(first_Name = contact[0], last_Name = contact[1]), 
-                v   = People.objects.get(first_Name = friends[0], last_Name = friends[1]),).save()
-        Link(parent = People.objects.get(user_ID = user_ID),
-                u   = People.objects.get(first_Name = friends[0], last_Name = friends[1]),
-                v   = People.objects.get(first_Name = contact[0], last_Name = contact[1]),).save()
-
-    return ''
-             
-def createPerson(first_name, last_name = ''):
-    if not People.objects.filter(first_Name = first_name, last_Name = last_name):
-        People(first_Name = first_name, last_Name = last_name).save()
-
-def loadLinks(ID):
-    Links = LinkEntry.objects.filter(user_ID = ID)
-
-    l = []
-    if Links:
-        print 'links'
-        for link in Links:
-            d = {}
-            d['a'] = link.a
-            d['b'] = link.b
-            d['c'] = link.c
-            l.append( d)
-    return l
-
-
-
-######################## OLD CODE ########################
-
-
-def getNetwork(request, ID):
-    in_memory = StringIO()
-    zip = ZipFile(in_memory, "a")
-    #probably want to pass in structures to writing functions 
-    zip.writestr("links.xml", str(writeLinksXML(Link.objects.filter(parent = ID))))
-    zip.writestr("nodes.xml", str(writeNodesXML(Link.objects.filter(parent = ID))))
-    zip.writestr("document.xml", str(writeDocXML(ID)))
-    # slices ???
-
-
-    # fix for Linux zip files read in Windows
-    for file in zip.filelist:
-        file.create_system = 0    
         
-    zip.close()
-
-    response = HttpResponse(mimetype="application/zip")
-    response["Content-Disposition"] = "attachment; filename=your_network.zip.spato"
-    
-    in_memory.seek(0)    
-    response.write(in_memory.read())
-    
-    return response
-
-
-
-
-
-
-def writeLinksXML(Links):
-    lxml = minidom.Document()
-    lxmlRoot = lxml.createElement("links")
-    peeps = makeUniquePeopleList(Links)
-    for p in peeps:
-        src = lxml.createElement("source")
-        src.setAttribute('index', str(p.user_ID))
-        ls = Links.filter(u = p.user_ID)
-        for l in ls:
-            target = lxml.createElement("target")
-            target.setAttribute('index', str(l.v.user_ID))
-            target.setAttribute('weight', '1')
-            src.appendChild(target)
-        lxmlRoot.appendChild(src)
-    ''' 
-    for l in Links:
-        src = lxml.createElement("source")
-        src.setAttribute('index', str(l.u.user_ID))
-        target = lxml.createElement("target")
-        target.setAttribute('index', str(l.v.user_ID))
-        src.appendChild(target)
-        lxmlRoot.appendChild(src)
-    '''    
-    lxml.appendChild(lxmlRoot)
-    return lxml.toxml()
-
-def writeNodesXML(Links):
-    peeps = makeUniquePeopleList(Links)
-
-    nxml = minidom.Document()
-    nxmlRoot = nxml.createElement("nodes")
-    for p in peeps:
-        node = nxml.createElement("node")
-        node.setAttribute('id', str(p.user_ID))
-        node.setAttribute('name', str(p.first_Name) + ' ' +  str(p.last_Name))
-        node.setAttribute('location', str(random.random()) + ',' + str(random.random()))
-        node.setAttribute('strength', '1')
-        nxmlRoot.appendChild(node)
-    nxml.appendChild(nxmlRoot)
-    return nxml.toxml()
-
-def writeDocXML(ID):
-    me = People.objects.get(user_ID = ID)
-    xml = minidom.Document()
-    xmlRoot = xml.createElement("document")
-    title = xml.createTextNode(me.first_Name + " " + me.last_Name + '\'s ' + 'network')
-    tit = xml.createElement("title")
-    tit.appendChild(title)
-    xmlRoot.appendChild(tit)
-    nodes = xml.createElement("nodes")
-    nodes.setAttribute("src", 'nodes.xml')
-    xmlRoot.appendChild(nodes)
-    links = xml.createElement("links")
-    links.setAttribute("src", 'links.xml')
-    xmlRoot.appendChild(links)
-    #slices ???
-    xml.appendChild(xmlRoot)
-    return xml.toxml()
