@@ -53,18 +53,16 @@ class LinkEntry(models.Model):
         ppl_dict = self.cleanAndChopNames()
         self.createPerson(ppl_dict['broker']['first_name'], ppl_dict['broker']['last_name'])
         self.createPerson(ppl_dict['contact']['first_name'], ppl_dict['contact']['last_name'])
-        friends = []
-        for person in ppl_dict['friends']:
-            if not person['first_name'] == '': 
-                self.createPerson(person['first_name'], person['last_name'])
-                friends.append(People.objects.get(first_Name = person['first_name'], last_Name = person['last_name']))
+        friends = self.makeFriends(ppl_dict['friends'])
         broker = People.objects.get(first_Name = ppl_dict['broker']['first_name'], last_Name = ppl_dict['broker']['last_name'])
         contact = People.objects.get(first_Name = ppl_dict['contact']['first_name'], last_Name = ppl_dict['contact']['last_name'])
-        me = People.objects.get(user_ID = self.user_ID.user_ID)
+        me = self.user_ID
         #M_P = self.user_ID.user_ID == broker.user_ID
-        if (self.user_ID != broker.user_ID):
+        if (self.user_ID != broker.user_ID): 
             if (not Link.objects.filter(u = me, v = broker)):
                 Link(parent = me, link_type = 'N', entry = self, u = me, v = broker, ).save()
+            # if (not Link.objects.filter(u = me, v = contact)):
+            #     Link(parent = me, link_type = 'Q', entry = self, u = me, v = broker, ).save() # as you now know this person
             Link(parent = me, link_type = 'U', entry = self, u = broker, v = contact, ).save()
            # Link(parent = me, link_type = 'N', entry = self, u = me, v = contact,).save()
         else:
@@ -73,6 +71,13 @@ class LinkEntry(models.Model):
             for p in friends:
                 Link(parent = me, link_type = 'M', entry = self, u = contact, v = p, ).save() #should check to see if your already connected to p ..
                 Link(parent = me, link_type = 'Q', entry = self, u = me, v = p,).save()
+    def makeFriends(self, friend_dict):
+        friends = []
+        for person in friend_dict:
+            if not person['first_name'] == '': 
+                self.createPerson(person['first_name'], person['last_name'])
+                friends.append(People.objects.get(first_Name = person['first_name'], last_Name = person['last_name']))
+        return friends
   
 class Link(models.Model): 
     LINK_CHOICES = (

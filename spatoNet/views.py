@@ -74,7 +74,7 @@ def inputNetwork(request, ID):
     if request.method == 'POST':
         if "delete" in request.POST:
             if request.POST['delete'] != 'None':
-                LinkEntry.objects.filter( link_ID = request.POST['delete']).delete()
+                deleteLinkEntry( LinkEntry.objects.get( link_ID = request.POST['delete']) )
             return refreshParams()
         fset = l_fset(request.POST) 
         if fset.is_valid():
@@ -111,10 +111,16 @@ def viewNetwork(request, ID):
 ################### HELPER FUNCTIONS #######################
 
 def deleteLinkEntry(link):
-    l = LinkEntry.objects.get( link_ID = link )
-    a = l.cleanSplits( l.a.split(' ', 2) )
-    b = l.cleanSplits( l.b.split(' ', 2) )
-    list_of_friends = l.c.split(',')
+    # the borker shoudl be the only one that requires a chekc to delte teh children
+    # #a = l.cleanSplits( l.a.split(' ', 2) )
+    #     b = l.cleanSplits( l.b.split(' ', 2) )
+    #     #list_of_friends = l.c.split(',')
+    #     broker = People.objects.filter(first_Name = b[0], last_Name = b[1])
+    broker_children = LinkEntry.objects.filter( a = link.b )
+    if broker_children:
+        for child in broker_children:
+            child.delete()
+    link.delete()
     
     
 #def searchForLinkEntryContaining():
