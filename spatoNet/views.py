@@ -119,7 +119,7 @@ def deleteLinkEntry(link):
     broker_children = LinkEntry.objects.filter( a = link.b )
     if broker_children:
         for child in broker_children:
-            child.delete()
+            deleteLinkEntry(child)
     link.delete()
     
     
