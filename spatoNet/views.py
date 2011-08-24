@@ -32,8 +32,7 @@ def inputName(request):
     if request.method == 'POST':
         form = NameForm(request.POST)
         if form.is_valid():
-            me = People( first_Name = request.POST['first_Name'].strip().title(), last_Name = request.POST['last_Name'].strip().title())
-            me.save()
+            me = People( first_Name = request.POST['first_Name'], last_Name = request.POST['last_Name']).save()
             return HttpResponseRedirect("/inputNetwork/%d/" % me.user_ID)
         else:
             return errorHandle( u'Please Input your First and Last Name' )
@@ -111,20 +110,11 @@ def viewNetwork(request, ID):
 ################### HELPER FUNCTIONS #######################
 
 def deleteLinkEntry(link):
-    # the borker shoudl be the only one that requires a chekc to delte teh children
-    # #a = l.cleanSplits( l.a.split(' ', 2) )
-    #     b = l.cleanSplits( l.b.split(' ', 2) )
-    #     #list_of_friends = l.c.split(',')
-    #     broker = People.objects.filter(first_Name = b[0], last_Name = b[1])
     broker_children = LinkEntry.objects.filter( a = link.b )
     if broker_children:
         for child in broker_children:
             deleteLinkEntry(child)
     link.delete()
-    
-    
-#def searchForLinkEntryContaining():
-    
     
 
 def generateJson(ID):
@@ -139,18 +129,15 @@ def generateJson(ID):
         adj = []
         ls = links.filter(u = p.user_ID)
         for l in ls:
-            print l.link_type
             adjDict = {}
             adjDict['nodeTo'] = str(l.v.user_ID)
             adjDict['data'] = {'$color' : color_dict[l.link_type] } 
             if l.link_type == 'Q':
-                print 'yes'
                 adjDict['data']['$ignore'] = 'true'
                 adjDict['data']['$type'] = 'line'
             adj.append(adjDict)
         d['adjacencies'] = adj
         jsString.append(d)
-        #print json.dumps(jsString, indent = 4)
     return json.dumps(jsString, separators=(',',':'))
 
 

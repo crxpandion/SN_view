@@ -7,7 +7,12 @@ class People(models.Model):
     first_Name = models.CharField(max_length=20)
     last_Name = models.CharField(max_length=20, blank = True)
     user_ID = models.AutoField(primary_key=True)
-
+    def clean(self):
+        data = self.cleaned_data
+        data['first_Name'] = data['first_Name'].strip().title()
+        data['last_Name'] = data['last_Name'].strip().title()
+        return data
+    
 class LinkEntry(models.Model):
     user_ID = models.ForeignKey(People)
     link_ID = models.AutoField(primary_key=True)
