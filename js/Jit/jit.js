@@ -5015,6 +5015,56 @@ Graph.Util = {
             }
         })(node, levelBegin + d, levelEnd + d);      
     },
+    
+    eachDFSLevel: function(node, levelBegin, levelEnd, action, flags) {
+        var d = node._depth, filter = this.filter(flags), that = this;
+        levelEnd = levelEnd === false? Number.MAX_VALUE -d : levelEnd;
+        (function loopLevel(node, levelBegin, levelEnd) {
+            var d = node._depth;
+            var branches = 0;
+            var branchesCount = 0;
+            var rootP = false;
+            function loopDFSAfter(node, levelBegin, levelEnd) {
+                var d = node._depth;
+                if(d >= levelBegin && d <= levelEnd && filter(node)) action(node, d);
+                if(d < levelEnd) {
+                    that.eachAdjacency(node, function(adj) {
+                        var n = adj.nodeTo;
+                        if(n._depth > d) loopLevel(n, levelBegin, levelEnd);
+                    }, flags);
+                }
+            };
+            function loopDFSBefore(node, levelBegin, levelEnd) {
+                var d = node._depth;
+                if(d < levelEnd) {
+                    that.eachAdjacency(node, function(adj) {
+                        var n = adj.nodeTo;
+                        if(n._depth > d) loopLevel(n, levelBegin, levelEnd);
+                    }, flags);
+                }
+                if(d >= levelBegin && d <= levelEnd && filter(node)) action(node, d);
+            };
+            if(d < levelEnd) {
+                that.eachAdjacency(node, function(adj) {
+                   var n = adj.nodeTo;
+                   if (n._depth > d) branches += 1;
+                }, flags);
+                that.eachAdjacency(node, function(adj) {
+                    var n = adj.nodeTo;
+                    var halfBranches = Math.floor(branches / 2);
+                    if(n._depth > d) {
+                        if (branchesCount === halfBranches && d >= levelBegin && d <= levelEnd && filter(node)) {
+                            action(node, d);
+                            rootP = true;
+                        }
+                        branchesCount += 1;
+                        (rootP) ? loopDFSAfter(n, levelBegin, levelEnd) : loopDFSBefore(n, levelBegin, levelEnd);
+                    }
+                }, flags);
+            }
+            if (branches === 0 && d >= levelBegin && d <= levelEnd && filter(node)) action(node, d);
+        })(node, levelBegin + d, levelEnd + d);      
+    },
 
     /*
        Method: eachSubgraph
@@ -5276,7 +5326,7 @@ $.each(['get', 'getNode', 'each', 'eachNode', 'computeLevels', 'eachBFS', 'clean
 });
 
 //Append node methods to <Graph.Node>
-$.each(['eachAdjacency', 'eachLevel', 'eachSubgraph', 'eachSubnode', 'anySubnode', 'getSubnodes', 'getParents', 'isDescendantOf'], function(m) {
+$.each(['eachAdjacency', 'eachLevel', 'eachDFSLevel', 'eachSubgraph', 'eachSubnode', 'anySubnode', 'getSubnodes', 'getParents', 'isDescendantOf'], function(m) {
   Graph.Node.prototype[m] = function() {
     return Graph.Util[m].apply(Graph.Util, [this].concat(Array.prototype.slice.call(arguments)));
   };
@@ -6437,7 +6487,7 @@ var EdgeHelper = {
         var vect = new Complex(to.x - from.x, to.y - from.y);
         vect.$scale(dim / vect.norm());
         var intermediatePoint = new Complex(to.x - vect.x, to.y - vect.y),
-            normal = new Complex(-vect.y / 2, vect.x / 2),
+            normal = new Complex(-vect.y / 2.5, vect.x / 2.5),
             v1 = intermediatePoint.add(normal), 
             v2 = intermediatePoint.$add(normal.$scale(-1));
         
@@ -6497,6 +6547,7 @@ var EdgeHelper = {
     'render': function(from, to, r, canvas){
       var ctx = canvas.getCtx();  
       var centerOfCircle = computeArcThroughTwoPoints(from, to);
+      var dim = 10;
       if (centerOfCircle.a > 1000 || centerOfCircle.b > 1000
           || centerOfCircle.ratio < 0) {
         ctx.beginPath();
@@ -6504,6 +6555,9 @@ var EdgeHelper = {
         ctx.lineTo(to.x * r, to.y * r);
         ctx.stroke();
       } else {
+           if ( centerOutsideLineP(to,from, centerOfCircle) ) {
+              centerOfCircle = reflectCenter(to, from, centerOfCircle);
+           }
         var angleBegin = Math.atan2(to.y - centerOfCircle.y, to.x
             - centerOfCircle.x);
         var angleEnd = Math.atan2(from.y - centerOfCircle.y, from.x
@@ -6513,6 +6567,52 @@ var EdgeHelper = {
         ctx.arc(centerOfCircle.x * r, centerOfCircle.y * r, centerOfCircle.ratio
             * r, angleBegin, angleEnd, sense);
         ctx.stroke();
+        
+        // console.log(angleBegin);
+        // // var vect = (Math.abs(angleBegin) > Math.PI / 2) ? new Complex(-Math.tan(angleBegin), 1) : new Complex(Math.tan(angleBegin), -1) ;
+        // var vect = (angleBegin > 0) ? ((Math.abs(angleBegin) > Math.PI / 2) ? new Complex(Math.tan(angleBegin), 1) : new Complex(-Math.tan(angleBegin), -1) ) : ((Math.abs(angleBegin) > Math.PI / 2) ? new Complex(-Math.tan(angleBegin), 1) : new Complex(Math.tan(angleBegin), -1));
+        // vect.$scale(dim / vect.norm());
+        // var intermediatePoint = new Complex(to.x - vect.x, to.y - vect.y),
+        //     normal = new Complex(-vect.y / 2.5, vect.x / 2.5),
+        //     v1 = intermediatePoint.add(normal), 
+        //     v2 = intermediatePoint.$add(normal.$scale(-1));
+        // 
+        // ctx.beginPath();
+        // ctx.moveTo(v1.x, v1.y);
+        // ctx.lineTo(v2.x, v2.y);
+        // ctx.lineTo(to.x, to.y);
+        // ctx.closePath();
+        // ctx.fill();
+      }
+      
+      function centerOutsideLineP(p1, p2, center ) {
+          var midpoint = {
+                x: (p2.x + p1.x) / 2,
+                y: (p2.y + p1.y) / 2
+            };
+            var midptDist = Math.sqrt(midpoint.x * midpoint.x + midpoint.y * midpoint.y);
+            var centerDist = Math.sqrt(center.x * center.x + center.y * center.y);
+            return midptDist < centerDist;
+      }
+      
+      function reflectCenter(p1, p2, center) {
+          var midpoint = {
+              x: (p2.x + p1.x) / 2,
+              y: (p2.y + p1.y) / 2
+          };
+          var Dx = midpoint.x - center.x;
+          var Dy = midpoint.y - center.y;
+          var ny = midpoint.y + Dy;
+          var nx = midpoint.x + Dx;
+          var out = {
+              x: nx,
+              y: ny,
+              ratio: center.ratio,
+              a: -2 * nx,
+              b: -2 * ny
+          };
+          
+          return out;
       }
       /*      
         Calculates the arc parameters through two points.
@@ -6575,6 +6675,7 @@ var EdgeHelper = {
       
            A Boolean instance describing the sense for drawing the HyperLine. 
       */
+
       function sense(angleBegin, angleEnd){
         return (angleBegin < angleEnd)? ((angleBegin + Math.PI > angleEnd)? false
             : true) : ((angleEnd + Math.PI > angleBegin)? true : false);
@@ -11673,6 +11774,175 @@ Options.PieChart = {
  * <RGraph>, <Hypertree>
  * 
  */
+ Layouts.GreatCircle = new Class({
+    compute : function(property) {
+        var prop = $.splat(property || [ 'current', 'start', 'end' ]);
+        NodeDim.compute(this.graph, prop, this.config);
+        this.graph.computeLevels(this.root, 0, "ignore");
+        var lengthFunc = this.createConstLevelDistanceFunc(); 
+        this.computeAngularWidths(prop);
+        this.computePositions(prop, lengthFunc);
+    },
+
+    /*
+     * computePositions
+     * 
+     * Performs the main algorithm for computing node positions.
+     */
+    computePositions : function(property, getLength) {
+      var propArray = property;
+      var graph = this.graph;
+      var root = graph.getNode(this.root);
+      var parent = this.parent;
+      var config = this.config;
+
+      for ( var i=0, l=propArray.length; i < l; i++) {
+        var pi = propArray[i];
+        root.setPos($P(0, 0), pi);
+        root.setData('span', Math.PI * 2, pi);
+      }
+
+      root.angleSpan = {
+        begin : 0,
+        end : 2 * Math.PI
+      };
+      
+      var angularUnit = (2 * Math.PI) / root._totalAngularWidth;
+      var angleInit = 0;
+      
+      root.eachAdjacency(function(adj, id){
+          var elem = adj.nodeTo;
+          var len = getLength(elem);
+          
+          elem.eachDFSLevel( 0, false, function(child, d) {
+
+                  var angleProportion = angularUnit * child._angularWidth;
+                  var theta = angleInit + angleProportion / 2;
+
+                  for ( var i=0, l=propArray.length; i < l; i++) {
+                    var pi = propArray[i];
+                    child.setPos($P(theta, len), pi);
+                    child.setData('span', angleProportion, pi);
+                    // child.setData('dim-quotient', child.getData('dim', pi) / maxDim[pi], pi);
+                  }
+
+                  child.angleSpan = {
+                    begin : angleInit,
+                    end : angleInit + angleProportion
+                  };
+                  angleInit += angleProportion;
+              
+          }, "ignore");
+          
+      }, "ignore");
+      
+      // graph.eachBFS(this.root, function(elem) {
+      //         var angleSpan = elem.angleSpan.end - elem.angleSpan.begin;
+      //         var angleInit = elem.angleSpan.begin;
+      //         var len = getLength(elem);
+      //         //Calculate the sum of all angular widths
+      //         var totalAngularWidths = 0, subnodes = [], maxDim = {};
+      //         elem.eachSubnode(function(sib) {
+      //           totalAngularWidths += sib._treeAngularWidth;
+      //           //get max dim
+      //           for ( var i=0, l=propArray.length; i < l; i++) {
+      //             var pi = propArray[i], dim = sib.getData('dim', pi);
+      //             maxDim[pi] = (pi in maxDim)? (dim > maxDim[pi]? dim : maxDim[pi]) : dim;
+      //           }
+      //           subnodes.push(sib);
+      //         }, "ignore");
+      //         //Maintain children order
+      //         //Second constraint for <http://bailando.sims.berkeley.edu/papers/infovis01.htm>
+      //         if (parent && parent.id == elem.id && subnodes.length > 0
+      //             && subnodes[0].dist) {
+      //           subnodes.sort(function(a, b) {
+      //             return (a.dist >= b.dist) - (a.dist <= b.dist);
+      //           });
+      //         }
+      //         //Calculate nodes positions.
+      //         for (var k = 0, ls=subnodes.length; k < ls; k++) {
+      //           var child = subnodes[k];
+      //           if (!child._flag) {
+      //             var angleProportion = child._treeAngularWidth / totalAngularWidths * angleSpan;
+      //             var theta = angleInit + angleProportion / 2;
+      // 
+      //             for ( var i=0, l=propArray.length; i < l; i++) {
+      //               var pi = propArray[i];
+      //               child.setPos($P(theta, len), pi);
+      //               child.setData('span', angleProportion, pi);
+      //               child.setData('dim-quotient', child.getData('dim', pi) / maxDim[pi], pi);
+      //             }
+      // 
+      //             child.angleSpan = {
+      //               begin : angleInit,
+      //               end : angleInit + angleProportion
+      //             };
+      //             angleInit += angleProportion;
+      //           }
+      //         }
+      //       }, "ignore");
+    },
+
+    /*
+     * Method: setAngularWidthForNodes
+     * 
+     * Sets nodes angular widths.
+     */
+    setAngularWidthForNodes : function(prop) {
+        this.graph.eachNode(function(elem) {
+           elem._angularWidth = elem.getData('angularWidth', prop[0]) || 5;
+        });
+      // this.graph.eachBFS(this.root, function(elem, i) {
+      //   var diamValue = elem.getData('angularWidth', prop[0]) || 5;
+      //   elem._angularWidth = diamValue / i;
+      // }, "ignore");
+    },
+
+    /*
+     * Method: setSubtreesAngularWidth
+     * 
+     * Sets subtrees angular widths.
+     */
+    setSubtreesAngularWidth : function() {
+      var that = this;
+      var _root = this.graph.getNode(this.root);
+      _root._totalAngularWidth = 0
+      _root.eachAdjacency(function(adj, i){
+          var target = adj.nodeTo
+         that.setSubtreeAngularWidth(target); 
+         _root._totalAngularWidth += target._treezzzAngularWidth;
+      }, "ignore");
+      // this.graph.eachNode(function(elem) {
+      //   that.setSubtreeAngularWidth(elem);
+      // }, "ignore");
+    },
+
+    /*
+     * Method: setSubtreeAngularWidth
+     * 
+     * Sets the angular width for a subtree.
+     */
+    setSubtreeAngularWidth : function(elem) {
+      var that = this, nodeAW = elem._angularWidth, sumAW = 0;
+      elem.eachLevel(0, false, function(child, d) {
+        // that.setSubtreeAngularWidth(child);
+        sumAW += child._angularWidth;
+      }, "ignore");
+      elem._treezzzAngularWidth = Math.max(nodeAW, sumAW);
+    },
+
+    /*
+     * Method: computeAngularWidths
+     * 
+     * Computes nodes and subtrees angular widths.
+     */
+    computeAngularWidths : function(prop) {
+      this.setAngularWidthForNodes(prop);
+      this.setSubtreesAngularWidth();
+    }
+     
+ });
+ 
 Layouts.Radial = new Class({
 
   /*
@@ -11949,6 +12219,7 @@ $jit.Sunburst = new Class({
       return (elem._depth + 1) * ld;
     };
   },
+
 
   /* 
      Method: refresh 
@@ -15873,7 +16144,7 @@ TM.Strip = new Class( {
 $jit.RGraph = new Class( {
 
   Implements: [
-      Loader, Extras, Layouts.Radial
+      Loader, Extras, Layouts.GreatCircle
   ],
 
   initialize: function(controller){
@@ -15923,6 +16194,24 @@ $jit.RGraph = new Class( {
   },
 
   /* 
+    Method: getRadius 
+    
+    Returns the current radius of the visualization. If *config.radius* is *auto* then it 
+    calculates the radius by taking the smaller size of the <Canvas> widget.
+    
+    See also:
+    
+    <Canvas.getSize>
+   
+  */
+  getRadius: function() {
+    var rad = this.config.radius;
+    if (rad !== "auto") { return rad; }
+    var s = this.canvas.getSize();
+    return Math.min(s.width, s.height) / 2;
+  },
+
+  /* 
   
     createLevelDistanceFunc 
   
@@ -15937,6 +16226,13 @@ $jit.RGraph = new Class( {
     var ld = this.config.levelDistance;
     return function(elem){
       return (elem._depth + 1) * ld;
+    };
+  },
+  
+  createConstLevelDistanceFunc: function(){
+    var ld = this.config.levelDistance;
+    return function(elem) {
+      return ld;  
     };
   },
 
@@ -16404,13 +16700,22 @@ $jit.RGraph.$extend = true;
             dim = adj.getData('dim'),
             direction = adj.data.$direction,
             inv = (direction && direction.length>1 && direction[0] != adj.nodeFrom.id);
-        this.edgeHelper.arrow.render(from, to, dim, inv, canvas);
+        this.edgeHelper.arrow.render(from, to, 13, inv, canvas);
       },
       'contains': function(adj, pos) {
         var from = adj.nodeFrom.pos.getc(true),
             to = adj.nodeTo.pos.getc(true);
         return this.edgeHelper.arrow.contains(from, to, pos, this.edge.epsilon);
       }
+    },
+    'hyperline': {
+      'render': function(adj, canvas) {
+        var from = adj.nodeFrom.pos.getc(),
+            to = adj.nodeTo.pos.getc(),
+            dim = this.viz.getRadius();
+        this.edgeHelper.hyperline.render(from, to, dim, canvas);
+      },
+      'contains': $.lambda(false)
     }
   });
 

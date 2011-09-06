@@ -7,12 +7,18 @@ class People(models.Model):
     first_Name = models.CharField(max_length=20)
     last_Name = models.CharField(max_length=20, blank = True)
     user_ID = models.AutoField(primary_key=True)
-    def clean(self):
-        data = self.cleaned_data
-        data['first_Name'] = data['first_Name'].strip().title()
-        data['last_Name'] = data['last_Name'].strip().title()
-        return data
-    
+    # def clean(self):
+    #     data = self.cleaned_data
+    #     data['first_Name'] = data['first_Name'].strip().title()
+    #     data['last_Name'] = data['last_Name'].strip().title()
+    #     return data
+        
+    def save(self, *args, **kwargs):
+        if People.objects.filter(first_Name = self.first_Name, last_Name = self.last_Name):
+            return
+        else:
+            super(People, self).save(*args, **kwargs)
+        
 class LinkEntry(models.Model):
     user_ID = models.ForeignKey(People)
     link_ID = models.AutoField(primary_key=True)
@@ -63,19 +69,16 @@ class LinkEntry(models.Model):
         contact = People.objects.get(first_Name = ppl_dict['contact']['first_name'], last_Name = ppl_dict['contact']['last_name'])
         me = self.user_ID
         #M_P = self.user_ID.user_ID == broker.user_ID
-        if (self.user_ID != broker.user_ID): 
-            if (not Link.objects.filter(u = me, v = broker)):
-                Link(parent = me, link_type = 'N', entry = self, u = me, v = broker, ).save()
-            # if (not Link.objects.filter(u = me, v = contact)):
-            #     Link(parent = me, link_type = 'Q', entry = self, u = me, v = broker, ).save() # as you now know this person
-            Link(parent = me, link_type = 'U', entry = self, u = broker, v = contact, ).save()
-           # Link(parent = me, link_type = 'N', entry = self, u = me, v = contact,).save()
+        if (self.user_ID != broker): 
+            # if (not Link.objects.filter(u = me, v = broker)):
+                # Link(parent = me, link_type = 'N', entry = self, u = me, v = broker, ).save()
+            Link(parent = me, link_type = 'N', entry = self, u = broker, v = contact, ).save()
         else:
-            Link(parent = me, link_type = 'N', entry = self, u = me, v = contact, ).save() #should it be M ??
+            Link(parent = me, link_type = 'U', entry = self, u = me, v = contact, ).save() #should it be M ??
         if len(friends) > 0:
             for p in friends:
-                Link(parent = me, link_type = 'M', entry = self, u = contact, v = p, ).save() #should check to see if your already connected to p ..
-                Link(parent = me, link_type = 'Q', entry = self, u = me, v = p,).save()
+                Link(parent = me, link_type = 'Q', entry = self, u = contact, v = p, ).save() 
+
     def makeFriends(self, friend_dict):
         friends = []
         for person in friend_dict:
@@ -113,7 +116,6 @@ class LinkForm(forms.Form):
 class NameForm(forms.Form):
     first_Name = forms.CharField(max_length = 30)
     last_Name = forms.CharField(max_length = 30)
-
     def clean(self):
         data = self.cleaned_data
         data['first_Name'] = data['first_Name'].strip().title()

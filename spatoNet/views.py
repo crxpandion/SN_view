@@ -18,7 +18,7 @@ import json
 # Create your views here.
 
 color_dict = { 'N' : '#E30038', #red
-               'U' : '#E30038', #red
+               'U' : '#00c224',
                'M' : '#00c224', #green
                'Q' : '#808080'} #grey
 
@@ -32,7 +32,9 @@ def inputName(request):
     if request.method == 'POST':
         form = NameForm(request.POST)
         if form.is_valid():
-            me = People( first_Name = request.POST['first_Name'], last_Name = request.POST['last_Name']).save()
+            r = form.cleaned_data
+            People( first_Name = r['first_Name'], last_Name = r['last_Name']).save()
+            me = People.objects.get(first_Name = r['first_Name'], last_Name = r['last_Name'])
             return HttpResponseRedirect("/inputNetwork/%d/" % me.user_ID)
         else:
             return errorHandle( u'Please Input your First and Last Name' )
@@ -115,7 +117,6 @@ def deleteLinkEntry(link):
         for child in broker_children:
             deleteLinkEntry(child)
     link.delete()
-    
 
 def generateJson(ID):
     jsString = []
@@ -135,11 +136,12 @@ def generateJson(ID):
             if l.link_type == 'Q':
                 adjDict['data']['$ignore'] = 'true'
                 adjDict['data']['$type'] = 'line'
+            if l.link_type == 'N':
+                adjDict['data']['$type'] = 'hyperline'
             adj.append(adjDict)
         d['adjacencies'] = adj
         jsString.append(d)
     return json.dumps(jsString, separators=(',',':'))
-
 
 def makeUniquePeopleList(l):
     master = []
@@ -150,8 +152,6 @@ def makeUniquePeopleList(l):
     for p in master:
         keys[p] = 1
     return keys.keys()
-
-
 
 def grabOldLinkForms(request, user_ID):
     link_forms = LinkEntry.objects.filter(user_ID = user_ID)
